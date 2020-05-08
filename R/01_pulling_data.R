@@ -1,4 +1,5 @@
 library(rvest)
+library(tools)
 library(tidyverse)
 
 
@@ -17,15 +18,17 @@ urls <- list(`2011` = "https://www.nbadraft.net/nba-mock-drafts/?year-mock=2011"
              `2019` = "https://www.nbadraft.net/nba-mock-drafts/?year-mock=2019",
              `2020` = "https://www.nbadraft.net/nba-mock-drafts/")
 # 1st round
-prospects <- map_dfr(urls,
-                     ~ read_html(.) %>%
-                       html_node(css = '#nba_mock_consensus_table') %>%
-                       html_table())
+prospects <- map2_dfr(.x = urls, .y = names(urls),
+                      ~ read_html(.x) %>%
+                        html_node(css = '#nba_mock_consensus_table') %>%
+                        html_table() %>%
+                        mutate(draft_class = .y))
 # 2nd round
-prospects_second <- map_dfr(urls,
-                            ~ read_html(.) %>%
-                              html_node(css = '#nba_mock_consensus_table2') %>%
-                              html_table())
+prospects_second <- map2_dfr(.x = urls, .y = names(urls),
+                             ~ read_html(.x) %>%
+                               html_node(css = '#nba_mock_consensus_table2') %>%
+                               html_table() %>%
+                               mutate(draft_class = .y))
 # Combine first and second rounds
 prospects <- prospects %>%
   bind_rows(prospects_second)
@@ -49,7 +52,7 @@ scouting_reports <- map(player_urls,
                         ~ read_html(.) %>%
                           html_node(css = '#analysis') %>%
                           html_text())
-names(scouting_reports) <- clean_players$player_url
+names(scouting_reports) <- prospects$Player
 
 # Cleaning up scouting reports
 cleaned_sr <- map(scouting_reports,
@@ -75,4 +78,7 @@ scouting_reports_df <- tibble(player = names(cleaned_sr),
                               strengths = sapply(lapply(cleaned_sr,
                                                         "[[", 1), "[[", 1),
                               weaknesses = sapply(lapply(cleaned_sr,
-                                                         "[[", 1), "[[", 2))
+                                                         "[[", 1), "[[", 2)) %>%
+  inner_join(prospects %>%
+               select(Player:draft_class) %>%
+               rename_all(.funs = ~ tolower(.)))
