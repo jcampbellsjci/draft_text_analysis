@@ -109,10 +109,12 @@ total_clusters <- kmeans(words_scaled, centers = 4)
 total_clusters$size
 
 # Plotting results by reduced dimensions
+# Nothing extremely obvious in the clusters
 total_clusters_df <- tibble(player = rownames(total_wv),
                             cluster = factor(total_clusters$cluster),
                             tsne_dim1 = total_tsne$Y[, 1],
-                            tsne_dim2 = total_tsne$Y[, 2])
+                            tsne_dim2 = total_tsne$Y[, 2]) %>%
+  left_join(scouting_reports_df)
 total_clusters_df %>%
   ggplot(aes(x = tsne_dim1, y = tsne_dim2, col = cluster)) +
   geom_point(size = 2)
@@ -160,7 +162,8 @@ similar_players <- function(input_player){
                                similarities = similarities[, 1]) %>%
     filter(similarities < 1) %>%
     top_n(n = 10, similarities) %>%
-    arrange(desc(similarities))
+    arrange(desc(similarities)) %>%
+    left_join(scouting_reports_df)
   
   top_strength <- similar_players_df %>%
     left_join(strength_tokenized, by = "player") %>%
@@ -182,7 +185,12 @@ similar_players <- function(input_player){
     
 }
 
-similar_players("myles-turner")
-similar_players("luka-doncic")
-similar_players("kawhi-leonard")
+similar_players("Myles Turner")
+similar_players("Luka Doncic")
+similar_players("Kawhi Leonard")
 
+write_csv(x = scouting_reports_df,  path = "data/scouting_reports.csv")
+write_csv(x = total_clusters_df,  path = "data/clusters.csv")
+write_csv(x = as.data.frame(total_wv) %>%
+            rownames_to_column(var = "player"),
+          path = "data/word_vectors.csv")
