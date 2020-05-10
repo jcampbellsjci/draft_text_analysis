@@ -1,4 +1,7 @@
+library(tidytext)
+library(babynames)
 library(shiny)
+library(plotly)
 library(tidyverse)
 
 source("../R/functions/similar_players.R")
@@ -44,7 +47,7 @@ ui <- fluidPage(
       
       uiOutput("available_players")
       ),
-    mainPanel(plotOutput("cluster_plot"))
+    mainPanel(plotlyOutput("cluster_plot"))
     )
     
   
@@ -69,18 +72,31 @@ server <- function(input, output) {
                     strength_tokenized, weakness_tokenized)
   })
   
-  output$cluster_plot <- renderPlot({
+  output$cluster_plot <- renderPlotly({
     similar_player_df <- similar_player_output()[[1]]
     
-    total_clusters_df %>%
+    cluster_plot_output <- scouting_reports_df %>%
+      left_join(total_clusters_df %>%
+                  select(player, tsne_dim1, tsne_dim2)) %>%
+      left_join(similar_player_df) %>%
       mutate(player_filter = ifelse(player %in%
                                       c(input$players,
                                         similar_player_df$player),
-                                    "Y", "N"),
-             cluster = factor(cluster)) %>%
-      ggplot(aes(x = tsne_dim1, y = tsne_dim2, col = cluster,
-                 alpha = player_filter)) +
-      geom_point(size = 4)
+                                    "Y", "N")) %>%
+      ggplot(aes(x = tsne_dim1, y = tsne_dim2, fill = player_filter,
+                 alpha = player_filter,
+                 text = paste0("Player: ", player, "\n",
+                               "Position: ", p, "\n",
+                               "Draft Class: ", draft_class, "\n",
+                               "Similarity: ", round(similarities, 2)))) +
+      geom_point(pch = 21, size = 4) +
+      scale_fill_manual(values = c("lightgrey", "skyblue")) +
+      scale_alpha_manual(values = c(.2, 1)) +
+      labs(x = "", y = "") +
+      theme(legend.position = "none")
+    
+    ggplotly(cluster_plot_output, tooltip = "text") %>%
+      style(hoverinfo = "none", traces = 1)
   })
 }
 
