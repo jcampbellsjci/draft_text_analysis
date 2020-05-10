@@ -11,30 +11,6 @@ total_wv <- read_csv("../data/word_vectors.csv") %>%
   column_to_rownames(var = "player") %>%
   as.matrix()
 
-strength_tokenized <- scouting_reports_df %>%
-  unnest_tokens(input = strengths, output = "word", token = "ngrams",
-                n = 1) %>%
-  select(player, word) %>%
-  # Removing stop words
-  anti_join(stop_words, by = "word") %>%
-  anti_join(babynames, by = c("word" = "name")) %>%
-  # Removing some common words that don't hold a lot of meaning
-  filter(!(word %in% c("game", "ability", "ball", "_blank"))) %>%
-  # Removing any token with a number
-  filter(!(grepl("[0-9]", word)))
-# Same for weakness
-weakness_tokenized <- scouting_reports_df %>%
-  unnest_tokens(input = weaknesses, output = "word", token = "ngrams",
-                n = 1) %>%
-  select(player, word) %>%
-  # Removing stop words
-  anti_join(stop_words, by = "word") %>%
-  anti_join(babynames, by = c("word" = "name")) %>%
-  # Removing some common words that don't hold a lot of meaning
-  filter(!(word %in% c("game", "ability", "ball", "_blank"))) %>%
-  # Removing any token with a number
-  filter(!(grepl("[0-9]", word)))
-
 
 ui <- fluidPage(
   
@@ -47,7 +23,8 @@ ui <- fluidPage(
       
       uiOutput("available_players")
       ),
-    mainPanel(plotlyOutput("cluster_plot"))
+    mainPanel(plotlyOutput("cluster_plot"),
+              dataTableOutput("similarity_table"))
     )
     
   
@@ -68,8 +45,14 @@ server <- function(input, output) {
   })
   
   similar_player_output <- reactive({
-    similar_players(input$players, total_wv,
-                    strength_tokenized, weakness_tokenized)
+    similar_players(input$players, scouting_reports_df, total_wv)
+  })
+  
+  output$similarity_table <- renderDataTable({
+    similar_player_output()[[1]] %>%
+      left_join(scouting_reports_df) %>%
+      mutate(similarities = round(similarities, 2)) %>%
+      select(-c(strengths, weaknesses))
   })
   
   output$cluster_plot <- renderPlotly({
