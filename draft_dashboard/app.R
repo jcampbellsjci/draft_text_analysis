@@ -18,18 +18,21 @@ ui <- fluidPage(
   
   titlePanel("Scouting Report Similarities"),
   
-  sidebarLayout(
-    sidebarPanel(
-      selectInput(inputId = "draft_class", label = "Draft Class",
-                  choices = sort(unique(scouting_reports_df$draft_class))),
-      
-      uiOutput("available_players")
-      ),
-    mainPanel(plotlyOutput("cluster_plot"),
-              DT::dataTableOutput("similarity_table"),
-              htmlOutput("strength_output"),
-              htmlOutput("weakness_output"))
-    )
+  fluidRow(
+    column(5, plotlyOutput("cluster_plot")),
+    column(7, DT::dataTableOutput("similarity_table"))
+  ),
+  
+  fluidRow(
+    column(4, selectInput(inputId = "draft_class", label = "Draft Class",
+                          choices = sort(unique(
+                            scouting_reports_df$draft_class)),
+                          selected = 2020),
+           br(),
+           uiOutput("available_players")),
+    column(4, htmlOutput("strength_output")),
+    column(4, htmlOutput("weakness_output"))
+  )
     
   
 )
