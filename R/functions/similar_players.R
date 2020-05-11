@@ -49,7 +49,7 @@ similar_players <- function(input_player, scouting_reports_df, total_wv){
     group_by(word) %>%
     count() %>%
     ungroup() %>%
-    top_n(10, n) %>%
+    top_n(50, n) %>%
     arrange(desc(n))
   
   top_weakness <- similar_players_df %>%
@@ -57,7 +57,7 @@ similar_players <- function(input_player, scouting_reports_df, total_wv){
     group_by(word) %>%
     count() %>%
     ungroup() %>%
-    top_n(10, n) %>%
+    top_n(50, n) %>%
     arrange(desc(n))
   
   list(similar_players_df, top_strength, top_weakness)

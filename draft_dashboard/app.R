@@ -1,10 +1,12 @@
 library(tidytext)
+library(DT)
 library(babynames)
 library(shiny)
 library(plotly)
 library(tidyverse)
 
 source("../R/functions/similar_players.R")
+source("../R/functions/highlight.R")
 scouting_reports_df <- read_csv("../data/scouting_reports.csv")
 total_clusters_df <- read_csv("../data/clusters.csv")
 total_wv <- read_csv("../data/word_vectors.csv") %>%
@@ -24,7 +26,9 @@ ui <- fluidPage(
       uiOutput("available_players")
       ),
     mainPanel(plotlyOutput("cluster_plot"),
-              dataTableOutput("similarity_table"))
+              DT::dataTableOutput("similarity_table"),
+              htmlOutput("strength_output"),
+              htmlOutput("weakness_output"))
     )
     
   
@@ -48,12 +52,32 @@ server <- function(input, output) {
     similar_players(input$players, scouting_reports_df, total_wv)
   })
   
-  output$similarity_table <- renderDataTable({
-    similar_player_output()[[1]] %>%
-      left_join(scouting_reports_df) %>%
-      mutate(similarities = round(similarities, 2)) %>%
-      select(-c(strengths, weaknesses))
+  output$similarity_table <- DT::renderDataTable({
+    datatable(similar_player_output()[[1]] %>%
+                left_join(scouting_reports_df) %>%
+                mutate(similarities = round(similarities, 2)) %>%
+                select(-c(strengths, weaknesses)),
+              selection = list(mode = "single", selected = c(1)))
   })
+  
+  output$strength_output <- renderText({
+    strength <- similar_player_output()[[2]]
+    
+    player_filter <- (similar_player_output()[[1]] %>%
+                        left_join(scouting_reports_df))[input$similarity_table_rows_selected, ]
+    
+    highlight(player_filter$strengths[1], strength$word)
+  })
+  
+  output$weakness_output <- renderText({
+    weakness <- similar_player_output()[[3]]
+    
+    player_filter <- (similar_player_output()[[1]] %>%
+                        left_join(scouting_reports_df))[input$similarity_table_rows_selected, ]
+    
+    highlight(player_filter$weaknesses[1], weakness$word)
+  })
+  
   
   output$cluster_plot <- renderPlotly({
     similar_player_df <- similar_player_output()[[1]]
