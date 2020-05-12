@@ -46,19 +46,19 @@ similar_players <- function(input_player, scouting_reports_df, total_wv){
   
   top_strength <- similar_players_df %>%
     left_join(strength_tokenized, by = "player") %>%
+    group_by(word, player) %>%
+    count() %>%
     group_by(word) %>%
     count() %>%
-    ungroup() %>%
-    top_n(50, n) %>%
-    arrange(desc(n))
+    filter(n >= 3)
   
   top_weakness <- similar_players_df %>%
     left_join(weakness_tokenized, by = "player") %>%
+    group_by(word, player) %>%
+    count() %>%
     group_by(word) %>%
     count() %>%
-    ungroup() %>%
-    top_n(50, n) %>%
-    arrange(desc(n))
+    filter(n >= 3)
   
   list(similar_players_df, top_strength, top_weakness)
   

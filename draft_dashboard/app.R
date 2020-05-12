@@ -29,9 +29,12 @@ ui <- fluidPage(
                             scouting_reports_df$draft_class)),
                           selected = 2020),
            br(),
-           uiOutput("available_players")),
-    column(4, htmlOutput("strength_output")),
-    column(4, htmlOutput("weakness_output"))
+           uiOutput("available_players"),
+           style = "padding:20px;"),
+    column(4, HTML("<b>Strengths Report</b>"), htmlOutput("strength_output"),
+           style = "padding:20px;"),
+    column(4, HTML("<b>Weaknesses Report</b>"), htmlOutput("weakness_output"),
+           style = "padding:20px;")
   )
     
   
@@ -60,7 +63,8 @@ server <- function(input, output) {
                 left_join(scouting_reports_df) %>%
                 mutate(similarities = round(similarities, 2)) %>%
                 select(-c(strengths, weaknesses)),
-              selection = list(mode = "single", selected = c(1)))
+              selection = list(mode = "single", selected = c(1)),
+              options = list(dom = 't'))
   })
   
   output$strength_output <- renderText({
@@ -69,7 +73,7 @@ server <- function(input, output) {
     player_filter <- (similar_player_output()[[1]] %>%
                         left_join(scouting_reports_df))[input$similarity_table_rows_selected, ]
     
-    highlight(player_filter$strengths[1], strength$word)
+    highlight(sub(":", "", player_filter$strengths[1]), strength$word)
   })
   
   output$weakness_output <- renderText({
@@ -78,7 +82,7 @@ server <- function(input, output) {
     player_filter <- (similar_player_output()[[1]] %>%
                         left_join(scouting_reports_df))[input$similarity_table_rows_selected, ]
     
-    highlight(player_filter$weaknesses[1], weakness$word)
+    highlight(sub(":", "", player_filter$weaknesses[1]), weakness$word)
   })
   
   
