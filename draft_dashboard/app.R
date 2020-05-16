@@ -5,11 +5,11 @@ library(shiny)
 library(plotly)
 library(tidyverse)
 
-source("../R/functions/similar_players.R")
-source("../R/functions/highlight.R")
-scouting_reports_df <- read_csv("../data/scouting_reports.csv")
-total_clusters_df <- read_csv("../data/clusters.csv")
-total_wv <- read_csv("../data/word_vectors.csv") %>%
+source("functions/similar_players.R")
+source("functions/highlight.R")
+scouting_reports_df <- read_csv("data/scouting_reports.csv")
+total_clusters_df <- read_csv("data/clusters.csv")
+total_wv <- read_csv("data/word_vectors.csv") %>%
   column_to_rownames(var = "player") %>%
   as.matrix()
 
